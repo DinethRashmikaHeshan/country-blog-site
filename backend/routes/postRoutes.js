@@ -194,4 +194,24 @@ router.delete('/posts/:id/unlike', authenticateToken, postController.unlikePost)
  */
 router.get('/feed', authenticateToken, postController.getFeed);
 
+/**
+ * @swagger
+ * /posts/{id}:
+ *   get:
+ *     summary: Get a specific blog post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Post details
+ *       404:
+ *         description: Post not found
+ */
+router.get('/posts/:id', postController.getPost);
+
 module.exports = router;

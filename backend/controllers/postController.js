@@ -190,4 +190,27 @@ const getFeed = (req, res) => {
     });
 };
 
-module.exports = { createPost, getPosts, updatePost, deletePost, likePost, unlikePost, getFeed };
+const getPost = (req, res) => {
+    const { id } = req.params;
+
+    const query = `
+        SELECT p.*, u.username,
+               (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 1) as likes,
+               (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 0) as dislikes
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.id = ?
+    `;
+
+    db.get(query, [id], (err, post) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to fetch post' });
+        }
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        res.json(post);
+    });
+};
+
+module.exports = { createPost, getPosts, updatePost, deletePost, likePost, unlikePost, getFeed, getPost};

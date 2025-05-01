@@ -32,6 +32,7 @@ export default function EditPostPage() {
   const { toast } = useToast()
 
   useEffect(() => {
+    console.log("data",isAuthenticated,user)
     if (!isAuthenticated) {
       router.push("/login")
       return
