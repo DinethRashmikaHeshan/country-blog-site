@@ -19,4 +19,23 @@ const createComment = (req, res) => {
     );
 };
 
-module.exports = { createComment };
+const getComments = (req, res) => {
+    const { id } = req.params;
+
+    db.all(
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+         FROM comments c
+         JOIN users u ON c.user_id = u.id
+         WHERE c.post_id = ?
+         ORDER BY c.created_at DESC`,
+        [id],
+        (err, comments) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch comments' });
+            }
+            res.json(comments || []);
+        }
+    );
+};
+
+module.exports = { createComment, getComments };
