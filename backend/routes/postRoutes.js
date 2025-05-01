@@ -153,6 +153,26 @@ router.post('/posts/:id/like', authenticateToken, postController.likePost);
 
 /**
  * @swagger
+ * /posts/{id}/unlike:
+ *   delete:
+ *     summary: Remove like or dislike from a post
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Like/dislike removed
+ */
+router.delete('/posts/:id/unlike', authenticateToken, postController.unlikePost);
+
+/**
+ * @swagger
  * /feed:
  *   get:
  *     summary: Get posts from followed users

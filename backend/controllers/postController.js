@@ -25,10 +25,10 @@ const getPosts = (req, res) => {
 
     let query = `
         SELECT p.*, u.username,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 1) as likes,
-        (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 0) as dislikes
+               (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 1) as likes,
+               (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.is_like = 0) as dislikes
         FROM posts p
-        JOIN users u ON p.user_id = u.id
+                 JOIN users u ON p.user_id = u.id
     `;
     const params = [];
 
@@ -102,6 +102,10 @@ const likePost = (req, res) => {
     const { id } = req.params;
     const { isLike } = req.body;
 
+    if (typeof isLike !== 'boolean') {
+        return res.status(400).json({ error: 'isLike must be a boolean' });
+    }
+
     db.run(
         'INSERT OR REPLACE INTO likes (user_id, post_id, is_like) VALUES (?, ?, ?)',
         [req.user.id, id, isLike],
@@ -109,7 +113,54 @@ const likePost = (req, res) => {
             if (err) {
                 return res.status(500).json({ error: 'Failed to record like/dislike' });
             }
-            res.json({ message: 'Like/dislike recorded' });
+            // Get updated like/dislike counts
+            db.get(
+                `SELECT 
+                    (SELECT COUNT(*) FROM likes l WHERE l.post_id = ? AND l.is_like = 1) as likes,
+                    (SELECT COUNT(*) FROM likes l WHERE l.post_id = ? AND l.is_like = 0) as dislikes`,
+                [id, id],
+                (err, counts) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to fetch counts' });
+                    }
+                    res.json({
+                        message: 'Like/dislike recorded',
+                        likes: counts.likes,
+                        dislikes: counts.dislikes
+                    });
+                }
+            );
+        }
+    );
+};
+
+const unlikePost = (req, res) => {
+    const { id } = req.params;
+
+    db.run(
+        'DELETE FROM likes WHERE user_id = ? AND post_id = ?',
+        [req.user.id, id],
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to remove like/dislike' });
+            }
+            // Get updated like/dislike counts
+            db.get(
+                `SELECT 
+                    (SELECT COUNT(*) FROM likes l WHERE l.post_id = ? AND l.is_like = 1) as likes,
+                    (SELECT COUNT(*) FROM likes l WHERE l.post_id = ? AND l.is_like = 0) as dislikes`,
+                [id, id],
+                (err, counts) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to fetch counts' });
+                    }
+                    res.json({
+                        message: 'Like/dislike removed',
+                        likes: counts.likes,
+                        dislikes: counts.dislikes
+                    });
+                }
+            );
         }
     );
 };
@@ -139,4 +190,4 @@ const getFeed = (req, res) => {
     });
 };
 
-module.exports = { createPost, getPosts, updatePost, deletePost, likePost, getFeed };
+module.exports = { createPost, getPosts, updatePost, deletePost, likePost, unlikePost, getFeed };

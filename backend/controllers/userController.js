@@ -81,4 +81,77 @@ const unfollow = (req, res) => {
     );
 };
 
-module.exports = { register, login, follow, unfollow };
+const getFollowers = (req, res) => {
+    const { userId } = req.params;
+
+    db.all(
+        `SELECT u.id, u.username, u.email
+         FROM users u
+                  JOIN follows f ON u.id = f.follower_id
+         WHERE f.following_id = ?`,
+        [userId],
+        (err, followers) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch followers' });
+            }
+            res.json(followers);
+        }
+    );
+};
+
+const getFollowing = (req, res) => {
+    const { userId } = req.params;
+
+    db.all(
+        `SELECT u.id, u.username, u.email
+         FROM users u
+                  JOIN follows f ON u.id = f.following_id
+         WHERE f.follower_id = ?`,
+        [userId],
+        (err, following) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch following' });
+            }
+            res.json(following);
+        }
+    );
+};
+
+const getUser = (req, res) => {
+    const { id } = req.params;
+
+    db.get(
+        'SELECT id, username, email FROM users WHERE id = ?',
+        [id],
+        (err, user) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to fetch user' });
+            }
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            res.json(user);
+        }
+    );
+};
+
+const getFollowStatus = (req, res) => {
+    const { userId } = req.params;
+
+    if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    db.get(
+        'SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?',
+        [req.user.id, userId],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to check follow status' });
+            }
+            res.json({ isFollowing: !!row });
+        }
+    );
+};
+
+module.exports = { register, login, follow, unfollow, getFollowers, getFollowing, getUser, getFollowStatus };
